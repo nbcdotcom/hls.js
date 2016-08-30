@@ -50,7 +50,7 @@ var Cues = {
         {
           cue.line = (r > 7 ? r - 2 : r + 1);
         }
-        cue.align = 'left';
+        cue.align = 'start';
         cue.position = 100 * (indent / 32) + (navigator.userAgent.match(/Firefox\//) ? 50 : 0);
         track.addCue(cue);
       }

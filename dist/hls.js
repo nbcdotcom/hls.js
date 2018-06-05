@@ -7,7 +7,7 @@
 		exports["Hls"] = factory();
 	else
 		root["Hls"] = factory();
-})(typeof self !== 'undefined' ? self : this, function() {
+})(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -386,14 +386,14 @@ var ErrorDetails = {
         if (!opts.alwaysNormalize) {
           return baseURL;
         }
-        var basePartsForNormalise = URLToolkit.parseURL(baseURL);
-        if (!basePartsForNormalise) {
+        var basePartsForNormalise = this.parseURL(baseURL);
+        if (!baseParts) {
           throw new Error('Error trying to parse base URL.');
         }
         basePartsForNormalise.path = URLToolkit.normalizePath(basePartsForNormalise.path);
         return URLToolkit.buildURLFromParts(basePartsForNormalise);
       }
-      var relativeParts = URLToolkit.parseURL(relativeURL);
+      var relativeParts = this.parseURL(relativeURL);
       if (!relativeParts) {
         throw new Error('Error trying to parse relative URL.');
       }
@@ -406,7 +406,7 @@ var ErrorDetails = {
         relativeParts.path = URLToolkit.normalizePath(relativeParts.path);
         return URLToolkit.buildURLFromParts(relativeParts);
       }
-      var baseParts = URLToolkit.parseURL(baseURL);
+      var baseParts = this.parseURL(baseURL);
       if (!baseParts) {
         throw new Error('Error trying to parse base URL.');
       }
@@ -2943,10 +2943,10 @@ function tsdemuxer__classCallCheck(instance, Constructor) { if (!(instance insta
 // With MSE currently one can only have one track of each, and we are muxing
 // whatever video/audio rendition in them.
 var RemuxerTrackIdConfig = {
-  video: 0,
-  audio: 1,
-  id3: 2,
-  text: 3
+  video: 1,
+  audio: 2,
+  id3: 3,
+  text: 4
 };
 
 var tsdemuxer_TSDemuxer = function () {
@@ -16090,7 +16090,7 @@ var hls_Hls = function () {
      * @type {string}
      */
     get: function get() {
-      return "0.9.1";
+      return "0.9.1-nbc";
     }
   }, {
     key: 'Events',
@@ -16810,11 +16810,6 @@ function webpackBootstrapFunc (modules) {
 /******/        get: getter
 /******/      });
 /******/    }
-/******/  };
-
-/******/  // define __esModule on exports
-/******/  __webpack_require__.r = function(exports) {
-/******/    Object.defineProperty(exports, '__esModule', { value: true });
 /******/  };
 
 /******/  // getDefaultExport function for compatibility with non-harmony modules

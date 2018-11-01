@@ -33,7 +33,7 @@ let DemuxerWorker = function (self) {
       try {
         enableLogs(config.debug === true);
       } catch (err) {
-        console.warn('demuxerWorker: unable to enable logs');
+        // console.warn('demuxerWorker: unable to enable logs');
       }
       // signal end of worker init
       forwardMessage('init', null);

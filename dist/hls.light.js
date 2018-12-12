@@ -1483,7 +1483,7 @@ var MP4Demuxer = function () {
       var referenceType = (referenceInfo & 0x80000000) >>> 31;
 
       if (referenceType === 1) {
-        console.warn('SIDX has hierarchical references (not supported)');
+        __WEBPACK_IMPORTED_MODULE_0__utils_logger__["b" /* logger */].warn('SIDX has hierarchical references (not supported)');
         return;
       }
 
@@ -13950,9 +13950,9 @@ var DemuxerWorker = function DemuxerWorker(self) {
         self.demuxer = new __WEBPACK_IMPORTED_MODULE_0__demux_demuxer_inline__["a" /* default */](observer, data.typeSupported, config, data.vendor);
         try {
           Object(__WEBPACK_IMPORTED_MODULE_2__utils_logger__["a" /* enableLogs */])(config.debug === true);
-        } catch (err) {
-          console.warn('demuxerWorker: unable to enable logs');
-        }
+        } catch (err) {}
+        // console.warn('demuxerWorker: unable to enable logs');
+
         // signal end of worker init
         forwardMessage('init', null);
         break;

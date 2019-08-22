@@ -1,19 +1,18 @@
-const assert = require('assert');
-
-import sinon from 'sinon';
 import SubtitleTrackController from '../../../src/controller/subtitle-track-controller';
 import Hls from '../../../src/hls';
+import sinon from 'sinon';
+const assert = require('assert');
 
-describe('SubtitleTrackController', () => {
+describe('SubtitleTrackController', function () {
   let subtitleTrackController;
   let videoElement;
+  let sandbox;
 
-  beforeEach(() => {
-    const hls = new Hls();
+  beforeEach(function () {
+    const hls = new Hls({});
 
     videoElement = document.createElement('video');
     subtitleTrackController = new SubtitleTrackController(hls);
-
     subtitleTrackController.media = videoElement;
     subtitleTrackController.tracks = [{ id: 0, url: 'baz', details: { live: false } }, { id: 1, url: 'bar' }, { id: 2, details: { live: true }, url: 'foo' }];
 
@@ -22,10 +21,21 @@ describe('SubtitleTrackController', () => {
 
     textTrack1.mode = 'disabled';
     textTrack2.mode = 'disabled';
+    sandbox = sinon.createSandbox();
   });
 
-  describe('onTextTrackChanged', () => {
-    it('should set subtitleTrack to -1 if disabled', () => {
+  afterEach(function () {
+    sandbox.restore();
+  });
+
+  describe('constructor', function () {
+    it('defaults stopped to true', function () {
+      assert.strictEqual(subtitleTrackController.stopped, true);
+    });
+  });
+
+  describe('onTextTrackChanged', function () {
+    it('should set subtitleTrack to -1 if disabled', function () {
       assert.strictEqual(subtitleTrackController.subtitleTrack, -1);
 
       videoElement.textTracks[0].mode = 'disabled';
@@ -34,7 +44,7 @@ describe('SubtitleTrackController', () => {
       assert.strictEqual(subtitleTrackController.subtitleTrack, -1);
     });
 
-    it('should set subtitleTrack to 0 if hidden', () => {
+    it('should set subtitleTrack to 0 if hidden', function () {
       assert.strictEqual(subtitleTrackController.subtitleTrack, -1);
 
       videoElement.textTracks[0].mode = 'hidden';
@@ -43,7 +53,7 @@ describe('SubtitleTrackController', () => {
       assert.strictEqual(subtitleTrackController.subtitleTrack, 0);
     });
 
-    it('should set subtitleTrack to 0 if showing', () => {
+    it('should set subtitleTrack to 0 if showing', function () {
       assert.strictEqual(subtitleTrackController.subtitleTrack, -1);
 
       videoElement.textTracks[0].mode = 'showing';
@@ -53,8 +63,8 @@ describe('SubtitleTrackController', () => {
     });
   });
 
-  describe('set subtitleTrack', () => {
-    it('should set active text track mode to showing', () => {
+  describe('set subtitleTrack', function () {
+    it('should set active text track mode to showing', function () {
       videoElement.textTracks[0].mode = 'disabled';
 
       subtitleTrackController.subtitleDisplay = true;
@@ -63,19 +73,17 @@ describe('SubtitleTrackController', () => {
       assert.strictEqual(videoElement.textTracks[0].mode, 'showing');
     });
 
-    it('should set active text track mode to hidden', () => {
+    it('should set active text track mode to hidden', function () {
       videoElement.textTracks[0].mode = 'disabled';
-
       subtitleTrackController.subtitleDisplay = false;
       subtitleTrackController.subtitleTrack = 0;
 
       assert.strictEqual(videoElement.textTracks[0].mode, 'hidden');
     });
 
-    it('should disable previous track', () => {
+    it('should disable previous track', function () {
       // Change active track without triggering setSubtitleTrackInternal
       subtitleTrackController.trackId = 0;
-
       // Change active track and trigger setSubtitleTrackInternal
       subtitleTrackController.subtitleTrack = 1;
 
@@ -83,51 +91,55 @@ describe('SubtitleTrackController', () => {
     });
 
     it('should trigger SUBTITLE_TRACK_SWITCH', function () {
-      const triggerSpy = sinon.spy(subtitleTrackController.hls, 'trigger');
+      const triggerSpy = sandbox.spy(subtitleTrackController.hls, 'trigger');
       subtitleTrackController.trackId = 0;
       subtitleTrackController.subtitleTrack = 1;
-      assert.equal(triggerSpy.callCount, 2);
-      assert.equal(triggerSpy.firstCall.calledWith('hlsSubtitleTrackSwitch', { id: 1 }), true);
+
+      assert.strictEqual(triggerSpy.callCount, 2);
+      assert.deepEqual(triggerSpy.firstCall.args[1], { id: 1 });
     });
 
     it('should trigger SUBTITLE_TRACK_LOADING if the track has no details', function () {
-      const triggerSpy = sinon.spy(subtitleTrackController.hls, 'trigger');
+      const triggerSpy = sandbox.spy(subtitleTrackController.hls, 'trigger');
       subtitleTrackController.trackId = 0;
       subtitleTrackController.subtitleTrack = 1;
-      assert.equal(triggerSpy.callCount, 2);
-      assert.equal(triggerSpy.secondCall.calledWith('hlsSubtitleTrackLoading', { url: 'bar', id: 1 }), true);
+
+      assert.strictEqual(triggerSpy.callCount, 2);
+      assert.deepEqual(triggerSpy.secondCall.args[1], { url: 'bar', id: 1 });
     });
 
     it('should not trigger SUBTITLE_TRACK_LOADING if the track has details and is not live', function () {
-      const triggerSpy = sinon.spy(subtitleTrackController.hls, 'trigger');
+      const triggerSpy = sandbox.spy(subtitleTrackController.hls, 'trigger');
       subtitleTrackController.trackId = 1;
       subtitleTrackController.subtitleTrack = 0;
-      assert.equal(triggerSpy.callCount, 1);
-      assert.equal(triggerSpy.firstCall.calledWith('hlsSubtitleTrackSwitch', { id: 0 }), true);
+
+      assert.strictEqual(triggerSpy.callCount, 1);
+      assert.deepEqual(triggerSpy.firstCall.args[1], { id: 0 });
     });
 
     it('should trigger SUBTITLE_TRACK_SWITCH if passed -1', function () {
-      const stopTimerSpy = sinon.spy(subtitleTrackController, '_stopTimer');
-      const triggerSpy = sinon.spy(subtitleTrackController.hls, 'trigger');
+      const triggerSpy = sandbox.spy(subtitleTrackController.hls, 'trigger');
       subtitleTrackController.trackId = 0;
       subtitleTrackController.subtitleTrack = -1;
-      assert.equal(stopTimerSpy.callCount, 1);
-      assert.equal(triggerSpy.firstCall.calledWith('hlsSubtitleTrackSwitch', { id: -1 }), true);
+
+      assert.deepEqual(triggerSpy.firstCall.args[1], { id: -1 });
     });
 
     it('should trigger SUBTITLE_TRACK_LOADING if the track is live, even if it has details', function () {
-      const triggerSpy = sinon.spy(subtitleTrackController.hls, 'trigger');
+      const triggerSpy = sandbox.spy(subtitleTrackController.hls, 'trigger');
       subtitleTrackController.trackId = 0;
       subtitleTrackController.subtitleTrack = 2;
-      assert.equal(triggerSpy.callCount, 2);
-      assert.equal(triggerSpy.secondCall.calledWith('hlsSubtitleTrackLoading', { url: 'foo', id: 2 }), true);
+
+      assert.strictEqual(triggerSpy.callCount, 2);
+      assert.deepEqual(triggerSpy.secondCall.args[1], { url: 'foo', id: 2 });
     });
 
-    it('should do nothing if called with out of bound indicies', function () {
-      const stopTimerSpy = sinon.spy(subtitleTrackController, '_stopTimer');
+    it('should do nothing if called with out of bound indices', function () {
+      const clearReloadSpy = sandbox.spy(subtitleTrackController, '_clearReloadTimer');
       subtitleTrackController.subtitleTrack = 5;
       subtitleTrackController.subtitleTrack = -2;
-      assert.equal(stopTimerSpy.callCount, 0);
+
+      assert.strictEqual(clearReloadSpy.callCount, 0);
     });
 
     it('should do nothing if called with a non-number', function () {
@@ -148,13 +160,76 @@ describe('SubtitleTrackController', () => {
         });
         subtitleTrackController._toggleTrackModes(-1);
         [].slice.call(videoElement.textTracks).forEach(t => {
-          assert.equal(t.mode, 'disabled');
+          assert.strictEqual(t.mode, 'disabled');
         });
       });
 
       it('should not throw an exception if the mediaElement does not exist', function () {
         subtitleTrackController.media = null;
         subtitleTrackController._toggleTrackModes(1);
+      });
+    });
+
+    describe('onSubtitleTrackLoaded', function () {
+      it('exits early if the loaded track does not match the requested track', function () {
+        const tracks = subtitleTrackController.tracks;
+        const clearReloadSpy = sandbox.spy(subtitleTrackController, '_clearReloadTimer');
+        subtitleTrackController.trackId = 1;
+
+        let mockLoadedEvent = { id: 999, details: { foo: 'bar' } };
+        subtitleTrackController.onSubtitleTrackLoaded(mockLoadedEvent);
+        assert.strictEqual(!!subtitleTrackController.timer, false);
+        assert.strictEqual(clearReloadSpy.callCount, 1);
+
+        mockLoadedEvent.id = 0;
+        subtitleTrackController.onSubtitleTrackLoaded(mockLoadedEvent);
+        assert.strictEqual(!!subtitleTrackController.timer, false);
+        assert.strictEqual(clearReloadSpy.callCount, 2);
+
+        mockLoadedEvent.id = 1;
+        subtitleTrackController.onSubtitleTrackLoaded(mockLoadedEvent);
+        tracks[1] = null;
+        assert.strictEqual(!!subtitleTrackController.timer, false);
+        assert.strictEqual(clearReloadSpy.callCount, 3);
+      });
+
+      it('does not set the reload timer if the stopped flag is set', function () {
+        subtitleTrackController.stopped = true;
+        subtitleTrackController.trackId = 1;
+        subtitleTrackController.onSubtitleTrackLoaded({ id: 1, details: { live: true, fragments: [] }, stats: {} });
+        assert.strictEqual(subtitleTrackController.timer, undefined);
+      });
+
+      it('sets the live reload timer if the level is live', function () {
+        subtitleTrackController.stopped = false;
+        subtitleTrackController.trackId = 1;
+        subtitleTrackController.onSubtitleTrackLoaded({ id: 1, details: { live: true, fragments: [] }, stats: {} });
+        assert.strictEqual(!!subtitleTrackController.timer, true);
+      });
+
+      it('stops the live reload timer if the level is not live', function () {
+        subtitleTrackController.trackId = 1;
+        subtitleTrackController.timer = setTimeout(() => {}, 0);
+        subtitleTrackController.onSubtitleTrackLoaded({ id: 1, details: { live: false, fragments: [] }, stats: {} });
+        assert.strictEqual(subtitleTrackController.timer, null);
+      });
+    });
+
+    describe('stopLoad', function () {
+      it('stops loading', function () {
+        const clearReloadSpy = sandbox.spy(subtitleTrackController, '_clearReloadTimer');
+        subtitleTrackController.stopLoad();
+        assert.strictEqual(subtitleTrackController.stopped, true);
+        assert.strictEqual(clearReloadSpy.callCount, 1);
+      });
+    });
+
+    describe('startLoad', function () {
+      it('stops loading', function () {
+        const loadCurrentTrackSpy = sandbox.spy(subtitleTrackController, '_loadCurrentTrack');
+        subtitleTrackController.startLoad();
+        assert.strictEqual(subtitleTrackController.stopped, false);
+        assert.strictEqual(loadCurrentTrackSpy.callCount, 1);
       });
     });
   });
